@@ -13,3 +13,9 @@ deploy_ghpages.sh
 tags
 .eslintcache
 __test_*.sh
+
+# Android
+!android/
+android/app/build/
+android/.gradle/
+android/local.properties

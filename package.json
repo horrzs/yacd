@@ -12,6 +12,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
+    "build:android": "pnpm build && npx cap sync android",
     "serve": "vite preview",
     "pretty": "prettier --log-level warn --write 'src/**/*.{js,scss,ts,tsx,md}'",
     "fmt": "pnpm lint && pnpm pretty"
@@ -29,6 +30,8 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
     "@fontsource/roboto-mono": "5.0.8",
     "@radix-ui/react-menubar": "^1.0.4",
     "@reach/tooltip": "0.18.0",
@@ -72,6 +75,7 @@
     "workbox-strategies": "7.0.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
     "@fontsource/inter": "5.0.8",
     "@types/invariant": "2.2.35",
     "@types/lodash-es": "4.17.9",

@@ -64,24 +64,70 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
         
+      - name: Configure Android Network Security
+        run: |
+          # 创建 xml 资源目录
+          mkdir -p android/app/src/main/res/xml
+          
+          # 创建网络安全配置文件
+          cat > android/app/src/main/res/xml/network_security_config.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+              <base-config cleartextTrafficPermitted="true">
+                  <trust-anchors>
+                      <certificates src="system" />
+                  </trust-anchors>
+              </base-config>
+          </network-security-config>
+          EOF
+          
+          # 修改 AndroidManifest.xml 添加网络安全配置引用
+          sed -i 's/<application/<application android:networkSecurityConfig="@xml\/network_security_config" android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+        
+      - name: Generate Signing Key
+        run: |
+          keytool -genkey -v -keystore android/app/release-key.jks \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias yacdh -storepass yacdh123 -keypass yacdh123 \
+            -dname "CN=YacdH, OU=YacdH, O=YacdH, L=Unknown, ST=Unknown, C=CN"
+        
       - name: Build Debug APK
         working-directory: android
         run: ./gradlew assembleDebug
         
-      - name: Rename APK
+      - name: Build Release APK
+        working-directory: android
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/release-key.jks \
+            -Pandroid.injected.signing.store.password=yacdh123 \
+            -Pandroid.injected.signing.key.alias=yacdh \
+            -Pandroid.injected.signing.key.password=yacdh123
+        
+      - name: Rename APKs
         run: |
           mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/yacdh-debug.apk
+          mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/yacdh-release.apk
           
-      - name: Upload APK Artifact
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: yacdh-debug-apk
           path: android/app/build/outputs/apk/debug/yacdh-debug.apk
           retention-days: 30
           
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yacdh-release-apk
+          path: android/app/build/outputs/apk/release/yacdh-release.apk
+          retention-days: 30
+          
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: android/app/build/outputs/apk/debug/yacdh-debug.apk
+          files: |
+            android/app/build/outputs/apk/debug/yacdh-debug.apk
+            android/app/build/outputs/apk/release/yacdh-release.apk
           draft: true
